@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            RGSC-GTAO Discover True Awards Progress Value
 // @author          PLTytus
-// @version         1.0.2
+// @version         1.1.0
 // @namespace       http://gtaweb.eu/tampermonkey
 // @downloadURL     https://github.com/PLTytus/tampermonkey-rgsc-gtao-discover-true-awards-progress-value/raw/master/rgsc-discover-true-awards-progress-value.user.js
 // @updateURL       https://github.com/PLTytus/tampermonkey-rgsc-gtao-discover-true-awards-progress-value/raw/master/rgsc-discover-true-awards-progress-value.meta.js
@@ -12,7 +12,7 @@
 (function() {
     'use strict';
 
-    function number_format(number, decimals, dec_point, thousands_sep){
+    let number_format = (number, decimals, dec_point, thousands_sep) => {
         number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
         let n = !isFinite(+number) ? 0 : +number,
             prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
@@ -32,7 +32,29 @@
             s[1] += new Array(prec - s[1].length + 1).join('0');
         }
         return s.join(dec);
-    }
+    };
+
+    let createAlternativeLayout = () => {
+        let elements = [], i = -2, j = -1;
+        document.querySelectorAll("p.awardsAchieved, ul.awardsList").forEach(x => {
+            elements[x.tagName === "P" ? i += 2 : j += 2] = x.outerHTML;
+        });
+        let result = document.createElement("div");
+        result.classList.add("clearfix");
+        result.innerHTML = elements.join("");
+        result.style.display = 'none';
+        result.id = "tt-awards-alternative-layout";
+        document.querySelector("#page-header .page-section").append(result);
+        let option = document.createElement("option");
+        option.value = "alternative-layout";
+        option.innerHTML = "ALL REWARDS";
+        document.querySelector(".awards-dropdown").prepend(option);
+        document.querySelector(".awards-dropdown").onchange = (e) => {
+            document.querySelectorAll("#tt-awards-alternative-layout, #tt-awards-alternative-layout > *").forEach(x => {
+                x.style.display = e.target.value === "alternative-layout" ? "block" : "none";
+            });
+        };
+    };
 
     let interval = setInterval(() => {
         let awards = document.querySelectorAll(".gtavContentArea");
@@ -52,6 +74,8 @@
                 award.style.position = 'relative';
                 award.append(info);
             });
+
+            createAlternativeLayout();
 
             clearInterval(interval);
         }
